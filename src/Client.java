@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.regex.Pattern;
 
 public class Client implements Runnable {
 
@@ -27,7 +28,7 @@ public class Client implements Runnable {
             close();
         }
 
-        output.println("# Welcome to the chat server. Please enter a username.");
+        send("i Welcome to the chat server. Please enter a username.");
 
         while (true) {
             String tempUsername = null;
@@ -42,7 +43,7 @@ public class Client implements Runnable {
                 username = tempUsername;
                 break;
             } else {
-                output.println("# Username already taken. Please enter a different username.");
+                send("! Username already taken. Please enter a different username.");
             }
         }
 
@@ -58,10 +59,8 @@ public class Client implements Runnable {
                     break;
                 }
 
-                if (message == "/exit") {
-                    close();
-                    break;
-                }
+                if (!checkMsg(message))
+                    continue;
 
                 sendAll(createMsg(message));
                 System.out.println(createMsg(message));
@@ -71,6 +70,9 @@ public class Client implements Runnable {
         }
     }
 
+    public String createMsg(String message) {
+        return String.format("<%s>: %s", username, message);
+    }
     public void send(String message) {
         output.println(message);
     }
@@ -94,18 +96,33 @@ public class Client implements Runnable {
         connected = false;
     }
 
-    public String createMsg(String message) {
-        return String.format("<%s>: %s", username, message);
+    public boolean checkMsg(String message) {
+        boolean passing = true;
+        if (!Pattern.matches("^[a-zA-Z0-9 !@#$%^&*()_+{}|:\"<>?,./;'\\[\\]=\\-]*$", message)) {
+            send("! Message contains invalid characters.");
+            passing = false;
+        }
+        if (message.equals("")) {
+            send("! Message cannot be empty.");
+            passing = false;
+        }
+        if (Pattern.matches("[\s]$", message)) {
+            send("! Message cannot be whitespace only.");
+            passing = false;
+        }
+        if (message.length() > 100) {
+            send("! Message cannot be longer than 100 characters.");
+            passing = false;
+        }
+        return passing;
     }
 
-    public boolean checkUsername(String username) {
+    public static boolean checkUsername(String username) {
         for (Client client : Server.clients) {
             if (client.username != null && client.username.equals(username)) {
                 return false;
             }
         }
-
-
         return true;
     }
 }

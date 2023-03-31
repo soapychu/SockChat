@@ -11,7 +11,7 @@ public class Server {
 
     public static void main(String[] args) {
         if (args.length == 0) {
-            port = 1024;
+            port = 6342;
         }
         else {
             port = Integer.parseInt(args[0]);
